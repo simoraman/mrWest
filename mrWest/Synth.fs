@@ -1,7 +1,7 @@
 ﻿module Synth
 open System.IO
 
-let pack (d:int16[]) = 
+let private pack (d:int16[]) = 
     let stream = new MemoryStream();
     let writer = new BinaryWriter(stream, System.Text.Encoding.ASCII);
     let dataLength = Array.length d * 2
@@ -29,11 +29,11 @@ let pack (d:int16[]) =
     writer.Write(data)
     stream
 
-let write (ms:MemoryStream) =
+let private write (ms:MemoryStream) =
     use fs = new FileStream(Path.Combine(__SOURCE_DIRECTORY__,"test.wav"), FileMode.Create)
     ms.WriteTo(fs)
 
-let createNote frequency =
+let private createNote frequency =
     let seconds = 0.5
     let sampleRate = 44100.
     let requiredSamples = seq { 1.0..(seconds * sampleRate) }
