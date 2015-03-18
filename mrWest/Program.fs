@@ -8,20 +8,13 @@ let frequency = Map.ofList [(C, 261.63); (Cis, 277.18); (D, 293.66); (Dis, 311.1
 
 let cMajor = [C; D; E; F; G; A; B]
 
-let randomMelody () = 
-    let r = System.Random()
-    let length = cMajor.Length
-    seq {0 .. 7} |> Seq.map (fun x -> cMajor.[r.Next(0, length)])
-
-let m = [C; C; C; E; D; D; D; F; E; E; D; D; C;
+let nooaMelody = [C; C; C; E; D; D; D; F; E; E; D; D; C;
 E; E; E; E; G; F; D; D; D; D; F; E;
 C; C; C; E; D; D; D; F; E; E; D; D; C;]
 
-let w = Seq.windowed 2 m
+let grouped = nooaMelody |> Seq.windowed 2 |> Seq.groupBy (fun (x:note[]) -> x.[0]) 
 
-let grouped = Seq.groupBy (fun (x:note[]) -> x.[0]) w
-
-let lol = Seq.map (fun x -> (fst x, x |> snd |> Seq.map (Seq.nth 1))) grouped
+let noteData = grouped |> Seq.map (fun x -> (fst x, x |> snd |> Seq.map (Seq.nth 1))) 
 
 let getNextNote (random:System.Random) (data:seq<note * seq<note>>) (currentNote:note) =
     let nextSet:seq<note> = data |> Seq.find (fun x -> (fst x) = currentNote) |> snd
@@ -41,7 +34,7 @@ let improvedMelody =
     let r = System.Random()
     let length = cMajor.Length
     let firstNote = cMajor.[r.Next(0, length)]
-    randomMelo lol firstNote [firstNote]
+    randomMelo noteData firstNote [firstNote]
 
 [<EntryPoint>]
 let main argv = 
