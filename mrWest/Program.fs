@@ -12,9 +12,10 @@ let nooaMelody = [C; C; C; E; D; D; D; F; E; E; D; D; C;
 E; E; E; E; G; F; D; D; D; D; F; E;
 C; C; C; E; D; D; D; F; E; E; D; D; C;]
 
-let grouped = nooaMelody |> Seq.windowed 2 |> Seq.groupBy (fun (x:note[]) -> x.[0]) 
-
-let noteData = grouped |> Seq.map (fun x -> (fst x, x |> snd |> Seq.map (Seq.nth 1))) 
+let noteData = nooaMelody 
+            |> Seq.windowed 2 
+            |> Seq.groupBy (fun (x:note[]) -> x.[0])
+            |> Seq.map (fun x -> (fst x, x |> snd |> Seq.map (Seq.nth 1))) 
 
 let getNextNote (random:System.Random) (data:seq<note * seq<note>>) (currentNote:note) =
     let nextSet:seq<note> = data |> Seq.find (fun x -> (fst x) = currentNote) |> snd
@@ -22,23 +23,19 @@ let getNextNote (random:System.Random) (data:seq<note * seq<note>>) (currentNote
     nextSet |> Seq.skip nextNoteIndex |> Seq.head
 
 let r = System.Random()
-let nextNoteApplied : (seq<note * seq<note>> -> note -> note) = getNextNote r
-let rec randomMelo data current (melo:note list) = 
-    match melo.Length with
-    | 8 -> melo
-    | _ -> 
-        let nextNote = nextNoteApplied data current
-        randomMelo data nextNote (melo @ [nextNote])
+let nextNoteFromData : (seq<note * seq<note>> -> note -> note) = getNextNote r
 
-let improvedMelody =
-    let r = System.Random()
-    let length = cMajor.Length
-    let firstNote = cMajor.[r.Next(0, length)]
-    randomMelo noteData firstNote [firstNote]
+let rec randomMelody wantedLength noteData currentNote (melody:note list) = 
+    if melody.Length = wantedLength 
+    then melody
+    else
+        let nextNote = nextNoteFromData noteData currentNote
+        randomMelody wantedLength noteData nextNote (melody @ [nextNote])
 
 [<EntryPoint>]
 let main argv = 
-    improvedMelody 
+    let firstNote = cMajor.[r.Next(0, cMajor.Length)]
+    randomMelody 8 noteData firstNote [firstNote]
         |> Seq.map (fun x -> frequency.[x])
         |> Synth.writeMelody
     0 // return an integer exit code
