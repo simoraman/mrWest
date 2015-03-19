@@ -30,7 +30,9 @@ let frequency =
 
 let cMajor = [ C; D; E; F; G; A; B ]
 let nooaMelody = 
-    [ C; C; C; E; D; D; D; F; E; E; D; D; C; E; E; E; E; G; F; D; D; D; D; F; E; C; C; C; E; D; D; D; F; E; E; D; D; C ]
+    [ C; C; C; E; D; D; D; F; E; E; D; D; C; 
+    E; E; E; E; G; F; D; D; D; D; F; E; 
+    C; C; C; E; D; D; D; F; E; E; D; D; C ]
 
 let noteData = 
     nooaMelody
@@ -41,20 +43,17 @@ let noteData =
             x
             |> snd
             |> Seq.map (Seq.nth 1)))
+    |> Map.ofSeq
 
-let getNextNote (random : System.Random) (data : seq<note * seq<note>>) (currentNote : note) = 
-    let nextSet : seq<note> = 
-        data
-        |> Seq.find (fun x -> (fst x) = currentNote)
-        |> snd
-    
+let getNextNote (random : System.Random) (data : Map<note,seq<note>>) (currentNote : note) = 
+    let nextSet : seq<note> = data.[currentNote]
     let nextNoteIndex = random.Next(0, Seq.length nextSet)
     nextSet
     |> Seq.skip nextNoteIndex
     |> Seq.head
 
 let r = System.Random()
-let nextNoteFromData : seq<note * seq<note>> -> note -> note = getNextNote r
+let nextNoteFromData : Map<note,seq<note>> -> note -> note = getNextNote r
 
 let rec randomMelody wantedLength noteData currentNote (melody : note list) = 
     if melody.Length = wantedLength then melody
