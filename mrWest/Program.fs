@@ -28,7 +28,6 @@ let frequency =
                  (Ais, 466.16)
                  (B, 493.88) ]
 
-let cMajor = [ C; D; E; F; G; A; B ]
 let nooaMelody = 
     [ C; C; C; E; D; D; D; F; E; E; D; D; C; 
     E; E; E; E; G; F; D; D; D; D; F; E; 
@@ -63,7 +62,8 @@ let rec randomMelody wantedLength noteData currentNote (melody : note list) =
 
 [<EntryPoint>]
 let main argv = 
-    let firstNote = cMajor.[r.Next(0, cMajor.Length)]
+    let availableNotes = noteData |> Map.toSeq |> Seq.map fst |> List.ofSeq
+    let firstNote = availableNotes.[r.Next(0, availableNotes.Length)]
     randomMelody 8 noteData firstNote [ firstNote ]
     |> Seq.map (fun x -> frequency.[x])
     |> Synth.writeMelody
