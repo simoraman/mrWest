@@ -14,6 +14,11 @@ type note =
     | Ais
     | B
 
+type value =
+    | Full
+    | Half
+    | Quarter
+
 let frequency = 
     Map.ofList [ (C, 261.63)
                  (Cis, 277.18)
@@ -29,20 +34,39 @@ let frequency =
                  (B, 493.88) ]
 
 let nooaMelody = 
-    [ C; C; C; E; D; D; D; F; E; E; D; D; C; 
-    E; E; E; E; G; F; D; D; D; D; F; E; 
-    C; C; C; E; D; D; D; F; E; E; D; D; C ]
+    [ (C, Quarter); (C, Quarter); (C, Quarter); (E, Quarter); 
+    (D, Quarter); (D, Quarter); (D, Quarter); (F, Quarter); 
+    (E, Quarter); (E, Quarter); (D, Quarter); (D, Quarter); 
+    (C, Full); 
+    (E, Quarter); (E, Quarter); (E, Quarter); (E, Quarter);
+    (G, Half); (F, Half); 
+    (D, Quarter); (D, Quarter); (D, Quarter); (D, Quarter); 
+    (F, Half); (E, Half); 
+    (C, Quarter); (C, Quarter); (C, Quarter); (E, Quarter);
+    (D, Quarter); (D, Quarter); (D, Quarter); (F, Quarter);
+    (E, Quarter); (E, Quarter); (D, Quarter); (D, Quarter); 
+    (C, Full); ]
 
-let noteData = 
-    nooaMelody
+let createMarkovChains data =
+    data
     |> Seq.windowed 2
-    |> Seq.groupBy (fun (x : note []) -> x.[0])
+    |> Seq.groupBy (fun x -> x.[0])
     |> Seq.map (fun x -> 
            (fst x, 
             x
             |> snd
             |> Seq.map (Seq.nth 1)))
     |> Map.ofSeq
+
+let noteData = 
+    nooaMelody 
+    |> List.map(fst)
+    |> createMarkovChains
+
+let timingsData =
+    nooaMelody
+    |> List.map(snd)
+    |> createMarkovChains
 
 let getNextNote (random : System.Random) (data : Map<note,seq<note>>) (currentNote : note) = 
     let nextSet : seq<note> = data.[currentNote]
@@ -62,7 +86,8 @@ let rec randomMelody wantedLength noteData currentNote (melody : note list) =
 
 [<EntryPoint>]
 let main argv = 
-    let availableNotes = noteData |> Map.toSeq |> Seq.map fst |> List.ofSeq
+    let availableNotes = 
+        noteData |> Map.toSeq |> Seq.map fst |> List.ofSeq
     let firstNote = availableNotes.[r.Next(0, availableNotes.Length)]
     randomMelody 8 noteData firstNote [ firstNote ]
     |> Seq.map (fun x -> frequency.[x])
