@@ -33,8 +33,7 @@ let private write (ms:MemoryStream) =
     use fs = new FileStream(Path.Combine(__SOURCE_DIRECTORY__,"test.wav"), FileMode.Create)
     ms.WriteTo(fs)
 
-let private createNote frequency =
-    let seconds = 0.5
+let private createNote frequency seconds =
     let sampleRate = 44100.
     let requiredSamples = seq { 1.0..(seconds * sampleRate) }
 
@@ -42,5 +41,5 @@ let private createNote frequency =
     samples |> Seq.toArray 
 
 let writeMelody melody =
-    let notes = melody |> Seq.map (fun x -> createNote x) |> Seq.reduce (Array.append)
+    let notes = melody |> Seq.map (fun x -> createNote (fst x) (snd x)) |> Seq.reduce (Array.append)
     notes |> pack |> write
