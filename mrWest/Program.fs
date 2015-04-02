@@ -18,6 +18,7 @@ type value =
     | Full
     | Half
     | Quarter
+    | Eighth
 
 let frequency = 
     Map.ofList [ (C, 261.63)
@@ -33,9 +34,9 @@ let frequency =
                  (Ais, 466.16)
                  (B, 493.88) ]
 
-let time tempo =
-    let quarterLength = 60. / tempo     
-    Map.ofList [(Quarter, quarterLength); (Half, 2. * quarterLength); (Full, 4. * quarterLength)]
+let time beatsPerMinute =
+    let quarterLength = 60. / beatsPerMinute     
+    Map.ofList [(Eighth, 0.5 * quarterLength); (Quarter, quarterLength); (Half, 2. * quarterLength); (Full, 4. * quarterLength)]
 
 let nooaMelody = 
     [ (C, Quarter); (C, Quarter); (C, Quarter); (E, Quarter); 
@@ -51,6 +52,15 @@ let nooaMelody =
     (E, Quarter); (E, Quarter); (D, Quarter); (D, Quarter); 
     (C, Full); ]
 
+let yesterday = 
+    [(G, Eighth); (F, Eighth); (F, Half);
+    (A, Eighth); (B, Eighth);(Cis, Eighth); (D, Eighth); (E, Eighth);(F, Eighth);
+    (E, Eighth); (D, Eighth); (D, Half);
+    (D, Eighth); (D, Eighth); (C, Eighth); (Ais, Eighth); (A, Eighth); (G, Eighth);
+    (Ais, Quarter); (A, Eighth); (A, Quarter); (G, Quarter);
+    (F, Quarter); (A, Eighth); (G, Eighth); (G, Quarter); (D, Eighth);
+    (F, Quarter); (A, Eighth); (A, Eighth); (A, Half);]
+
 let createMarkovChains data =
     data
     |> Seq.windowed 2
@@ -63,13 +73,12 @@ let createMarkovChains data =
     |> Map.ofSeq
 
 let noteData = 
-    nooaMelody 
+    yesterday
     |> List.map(fst)
     |> createMarkovChains
 
-
 let timingsData =
-    nooaMelody
+    yesterday
     |> List.map(snd)
     |> createMarkovChains
 
@@ -83,27 +92,26 @@ let getNextElement (random : System.Random) (data : Map<_,_>) currentElement =
 let r = System.Random()
 let nextElementFromData x y = getNextElement r x y
 
-let rec randomMelody wantedLength seedData currentElement (acc : 'a list) = 
+let rec randomSequence wantedLength seedData currentElement (acc : 'a list) = 
     if acc.Length = wantedLength then acc
     else 
         let nextElement = nextElementFromData seedData currentElement
-        randomMelody wantedLength seedData nextElement (acc @ [ nextElement ])
-
-let printSonicPiFormat melody = 
-    for note in melody do
-        printfn "play :%A, release: %A" (fst note) (snd note)
-        printfn "sleep %A" (snd note)
+        randomSequence wantedLength seedData nextElement (acc @ [ nextElement ])
 
 [<EntryPoint>]
 let main argv = 
     let availableNotes = 
         noteData |> Map.toSeq |> Seq.map fst |> List.ofSeq
     let firstNote = availableNotes.[r.Next(0, availableNotes.Length)]
-    let melody = randomMelody 8 noteData firstNote [ firstNote ]
+    let melody = randomSequence 24 noteData firstNote [ firstNote ] 
+                    |> List.map(fun x -> frequency.[x])
+
+    let timingsForTempo = (time 120.)
     let availableTimes = 
         timingsData |> Map.toSeq |> Seq.map fst |> List.ofSeq
     let firstTime = availableTimes.[r.Next(0, availableTimes.Length)]
-    let timings = randomMelody 8 timingsData firstTime [ firstTime ] |> List.map(fun x -> (time 140.).[x])
-    List.zip melody timings |> printSonicPiFormat 
-    List.zip (List.map(fun x -> frequency.[x]) melody) timings |> Synth.writeMelody
-    0 // return an integer exit code
+    let timings = randomSequence 24 timingsData firstTime [ firstTime ] 
+                    |> List.map(fun x -> timingsForTempo.[x])
+
+    List.zip melody timings |> Synth.writeMelody
+    0
